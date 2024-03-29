@@ -110,21 +110,21 @@ backends.xbacklight = {
     end,
 
     get = function(self, callback)
-        exec({self.cmd, "-get"}, function(output)
+        exec({ self.cmd, "-get" }, function(output)
             callback(tonumber(output))
         end)
     end,
 
     set = function(self, value, callback)
-        exec({self.cmd, "-set", tostring(value)}, callback)
+        exec({ self.cmd, "-set", tostring(value) }, callback)
     end,
 
     up = function(self, step, callback)
-        exec({self.cmd, "-inc", tostring(step)}, callback)
+        exec({ self.cmd, "-inc", tostring(step) }, callback)
     end,
 
     down = function(self, step, callback)
-        exec({self.cmd, "-dec", tostring(step)}, callback)
+        exec({ self.cmd, "-dec", tostring(step) }, callback)
     end,
 }
 
@@ -135,7 +135,7 @@ backends.xbacklight = {
 local bcontrol = { backends = backends }
 
 function bcontrol:new(args)
-    return setmetatable({}, {__index = self}):init(args)
+    return setmetatable({}, { __index = self }):init(args)
 end
 
 function bcontrol:init(args)
@@ -163,17 +163,17 @@ function bcontrol:init(args)
     self.is_valid = backend ~= nil
     self.backend = backend
     self.step = tonumber(args.step or '5')
-    self.levels = args.levels or {1, 25, 50, 75, 100}
+    self.levels = args.levels or { 1, 25, 50, 75, 100 }
 
-    self.widget = wibox.widget.textbox()
+    self.widget = args.template or wibox.widget.base.empty_widget()
 
     if self.is_valid then
         self.widget:buttons(gtable.join(
-            awful.button({ }, 1, function() self:up() end),
-            awful.button({ }, 3, function() self:down() end),
-            awful.button({ }, 2, function() self:toggle() end),
-            awful.button({ }, 4, function() self:up(1) end),
-            awful.button({ }, 5, function() self:down(1) end)
+            awful.button({}, 1, function() self:up() end),
+            awful.button({}, 3, function() self:down() end),
+            awful.button({}, 2, function() self:toggle() end),
+            awful.button({}, 4, function() self:up(1) end),
+            awful.button({}, 5, function() self:down(1) end)
         ))
 
         self.timer = timer({
@@ -194,9 +194,9 @@ end
 
 function bcontrol:update(opt_value)
     if opt_value and string.match(opt_value, "%S+") then
-        self:set_text(opt_value)
+        self.widget:emit_signal('brightness_widget::update', opt_value)
     else
-        self.backend:get(function(...) self:set_text(...) end)
+        self.backend:get(function(...) self.widget:emit_signal('brightness_widget::update', ...) end)
     end
 end
 
@@ -225,6 +225,6 @@ function bcontrol:toggle()
 end
 
 return setmetatable(bcontrol, {
-  __call = bcontrol.new,
+    __call = bcontrol.new,
 })
 -- vim: set ts=4 sw=4 et:
